@@ -13,13 +13,13 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from subprocess import run, Popen, PIPE
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, send
 import requests
 app = Flask(__name__, static_url_path='', static_folder='build')
 CORS(app, supports_credentials=True)
 # log = logging.getLogger('werkzeug')
 # log.disabled = True
-sock = Sock(app)
+socketio = SocketIO(app)
 contest = None
 base_dir = os.path.join(os.path.dirname(
     os.path.realpath(__file__)), "files")
@@ -95,7 +95,7 @@ class Contest:
         print(self.problem_list)
 
     def get_problem_details(self, problem_id):
-        if problem_id in self.problem_details:
+        if problem_id in self.problem_details and len(self.problem_details[problem_id]["test_cases"]) > 1:
             return self.problem_details
         print(f"Parsing test cases for problem {problem_id}")
         if self.platform == "codeforces":
@@ -120,7 +120,7 @@ class Contest:
             self.driver.get(
                 f"https://atcoder.jp/contests/{self.contest_id}/tasks/{self.contest_id}_{problem_id}")
             count, started, index = 1, 0, 1
-            while True:
+            while count < 20:
                 try:
                     data = self.driver.find_element(
                         By.ID, f"pre-sample{count}").text
@@ -133,12 +133,14 @@ class Contest:
                             self.problem_details[problem_id]["test_cases"][index]["output"] = data
                             index += 1
                         started = 1
-                except:
+                except Exception as e:
+                    print(str(e), count)
                     if started:
                         break
                 count += 1
-        with open(f"{self.contest_dir}/testcases.json", 'w') as f:
-            json.dump(self.problem_details, f)
+        if len(self.problem_details[problem_id]["test_cases"]) > 1:
+            with open(f"{self.contest_dir}/testcases.json", 'w') as f:
+                json.dump(self.problem_details, f)
         return self.problem_details
 
     def submit(self, problem_id, file_loc):
@@ -238,6 +240,12 @@ def submissions():
     return json.dumps(res)
 
 
+# @socketio.on('message', namespace='/testing')
+# def endpoint_socket(msg):
+#     send(str(datetime.datetime.now))
+#     return None
+
+
 def check(s1, s2):
     if s1.split() == s2.split():
         return "AC"
@@ -329,5 +337,18 @@ def submit(problem_id):
     return "Success"
 
 
+@app.route("/reset_code/<problem_id>")
+def reset_code(problem_id):
+    file_loc = os.path.join(contest.contest_dir, f"{problem_id}.cpp")
+    print("Creating a new file.")
+    with open("boilerplate/template.cpp") as f:
+        template = f.read()
+    with open(file_loc, 'w') as f:
+        f.write(template)
+    return "Success"
+
+
 if (__name__ == "__main__"):
-    app.run(debug=True)
+    if not os.path.exists(base_dir):
+        os.mkdir(base_dir)
+    socketio.run(app)

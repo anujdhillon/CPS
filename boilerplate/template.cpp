@@ -21,10 +21,12 @@ basic_ostream<Ch, Tr> &operator<<(basic_ostream<Ch, Tr> &os, Container const &x)
 
 #define int long long
 #define len(a) (int)a.size()
-#define rep(i, a, n) for (int i = a; i < n; i++)
-#define ordered_set tree<int, null_type, less<int>, rb_tree_tag, tree_order_statistics_node_update>
+#define ordered_set(T) tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>
 const long long INF = 1e18;
 const double EPS = 1e-9;
+const int di[8] = {1, 0, -1, 0, 1, -1, -1, 1};
+const int dj[8] = {0, 1, 0, -1, 1, 1, -1, -1};
+// dp?, graph?, bs on answer?, compress/sort queries?, stupid observation?
 int solve_case()
 {
 

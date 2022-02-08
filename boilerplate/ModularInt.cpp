@@ -1,3 +1,4 @@
+
 template <int mod>
 struct modint
 {
@@ -81,7 +82,7 @@ struct modint
     }
     friend ostream &operator<<(std::ostream &os, const modint &x) { return os << x.val; }
 };
-using mint = modint<1000000007>;
+using mint = modint<998244353>;
 template <typename T>
 T power(T x, int y)
 {

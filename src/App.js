@@ -5,7 +5,6 @@ import Dropdown from "./Components/Dropdown";
 import TestCases from "./Components/TestCases";
 import "./App.scss";
 function App() {
-  const [stats, setStats] = useState("");
   const [submissions, setSubmissions] = useState([]);
   const [problemList, setProblemList] = useState([]);
   const [problemDetails, setProblemDetails] = useState(null);
@@ -28,16 +27,8 @@ function App() {
   useEffect(() => {
     const interval = setInterval(async () => {
       const resp = await axios.get("http://127.0.0.1:5000/submissions");
-      setSubmissions(resp.data.submissions);
+      if (resp.data.submissions.length) setSubmissions(resp.data.submissions);
     }, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      const resp = await axios.get("http://127.0.0.1:5000/standings");
-      setStats(resp.data.stats);
-    }, 120000);
     return () => clearInterval(interval);
   }, []);
 
@@ -105,9 +96,24 @@ function App() {
     }
   };
 
+  let resetCode = async () => {
+    try {
+      await axios.get(
+        `http://127.0.0.1:5000/reset_code/${problemList[currentProblem]}`
+      );
+    } catch (e) {
+      setServerMessage(e);
+    }
+  };
+  const getColor = (verdict) => {
+    if (verdict === "AC" || verdict === "OK") return "lightgreen";
+    if (verdict === "WA" || verdict === "WRONG_ANSWER") return "red";
+    return "yellow";
+  };
+
   useEffect(() => {
     if (currentProblem != null) changeProblem(currentProblem);
-  }, [currentProblem]);
+  }, [currentProblem, changeProblem]);
   return (
     <div className="App">
       <div className="contest-and-problem">
@@ -117,20 +123,18 @@ function App() {
           setCurrentProblem={setCurrentProblem}
           setServerMessage={setServerMessage}
         />
+      </div>
+      <div className="button-section">
         <Dropdown
           label={"Currently solving"}
           list={problemList}
           displayed={currentProblem}
           setDisplayed={setCurrentProblem}
         />
-        <div className="stats">{stats}</div>
-      </div>
-      <div className="button-section">
-        <div className="compile-button">
-          <button onClick={compileCode}>Compile</button>
-          <button onClick={runCode}>Run</button>
-          <button onClick={submitCode}>Submit</button>
-        </div>
+        <button onClick={resetCode}>Reset Code</button>
+        <button onClick={compileCode}>Compile</button>
+        <button onClick={runCode}>Run</button>
+        <button onClick={submitCode}>Submit</button>
       </div>
       <div className="compile-message">
         <code>{serverMessage}</code>
@@ -159,9 +163,7 @@ function App() {
                 <td>{tim}</td>
                 <td
                   style={{
-                    backgroundColor: `${
-                      item.verdict === "OK" ? "lightgreen" : "red"
-                    }`,
+                    backgroundColor: getColor(item.verdict),
                   }}
                 >
                   {item.verdict}

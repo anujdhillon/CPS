@@ -4,6 +4,12 @@ export default function TestCases({
   problemList,
   setProblemDetails,
 }) {
+  const getColor = (verdict) => {
+    if (verdict === "AC" || verdict === "OK") return "lightgreen";
+    if (verdict === "WA" || verdict === "WRONG_ANSWER") return "red";
+    return "yellow";
+  };
+
   if (
     currentProblem === null ||
     problemList === null ||
@@ -51,7 +57,7 @@ export default function TestCases({
                 <div className="verdict">
                   <p
                     style={{
-                      color: `${item.verdict === "AC" ? "lightgreen" : "red"}`,
+                      backgroundColor: getColor(item.verdict),
                     }}
                   >
                     {item.verdict}
