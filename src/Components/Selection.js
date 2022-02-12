@@ -36,8 +36,9 @@ export default function Selection({
   let login = async () => {
     try {
       setServerMessage("Logging in.");
-      await axios.get(
-        `http://127.0.0.1:5000/login/${platformNames[platformBox]}/${username}/${password}`
+      await axios.post(
+        `http://127.0.0.1:5000/login/${platformNames[platformBox]}`,
+        { username: username, password: password }
       );
       setServerMessage("Logged in successfully.");
     } catch (e) {

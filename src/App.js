@@ -10,6 +10,8 @@ function App() {
   const [problemDetails, setProblemDetails] = useState(null);
   const [currentProblem, setCurrentProblem] = useState(null);
   const [serverMessage, setServerMessage] = useState("");
+  const languages = ["cpp", "py"];
+  const [language, setLanguage] = useState(0);
   // useEffect(() => {
   //   const ws = new WebSocket("ws://127.0.0.1:5000/check");
   //   ws.onopen = (event) => {
@@ -37,7 +39,7 @@ function App() {
       setServerMessage(`Fetching testcases for ${problemList[currentProblem]}`);
       if (currentProblem < problemList.length) {
         let resp = await axios.get(
-          `http://127.0.0.1:5000/change/${problemList[currentProblem]}`
+          `http://127.0.0.1:5000/change/${problemList[currentProblem]}/${languages[language]}`
         );
         setProblemDetails(resp.data.problemDetails);
       }
@@ -47,13 +49,13 @@ function App() {
         `Error while switching to problem ${problemList[currentProblem]}. Try Again.`
       );
     }
-  }, [currentProblem, problemList]);
+  }, [currentProblem, problemList, language]);
 
   let compileCode = async () => {
     try {
       setServerMessage("");
       let resp = await axios.get(
-        `http://127.0.0.1:5000/compile/${problemList[currentProblem]}`
+        `http://127.0.0.1:5000/compile/${problemList[currentProblem]}/${languages[language]}`
       );
       setServerMessage(resp.data);
     } catch (e) {
@@ -69,7 +71,7 @@ function App() {
             testCase: item,
           };
           let resp = await axios.post(
-            `http://127.0.0.1:5000/run/${problemList[currentProblem]}`,
+            `http://127.0.0.1:5000/run/${problemList[currentProblem]}/${languages[language]}`,
             payload
           );
           let newDetails = { ...problemDetails };
@@ -99,21 +101,35 @@ function App() {
   let resetCode = async () => {
     try {
       await axios.get(
-        `http://127.0.0.1:5000/reset_code/${problemList[currentProblem]}`
+        `http://127.0.0.1:5000/reset_code/${problemList[currentProblem]}/${languages[language]}`
       );
     } catch (e) {
       setServerMessage(e);
     }
   };
+
+  let verifyCode = async () => {
+    try {
+      setServerMessage("Stress testing the solution...")
+      let resp = await axios.get(
+        `http://127.0.0.1:5000/verify/${problemList[currentProblem]}/${languages[language]}`
+      );
+      setServerMessage(resp.data.status + resp.data.failedInputs);
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
   const getColor = (verdict) => {
     if (verdict === "AC" || verdict === "OK") return "lightgreen";
-    if (verdict === "WA" || verdict === "WRONG_ANSWER") return "red";
+    if (verdict === "WA" || verdict === "WRONG_ANSWER" || verdict === "TLE")
+      return "red";
     return "yellow";
   };
 
   useEffect(() => {
-    if (currentProblem != null) changeProblem(currentProblem);
-  }, [currentProblem, changeProblem]);
+    if (currentProblem != null) changeProblem(currentProblem, language);
+  }, [currentProblem, changeProblem, language]);
   return (
     <div className="App">
       <div className="contest-and-problem">
@@ -122,6 +138,12 @@ function App() {
           setProblemList={setProblemList}
           setCurrentProblem={setCurrentProblem}
           setServerMessage={setServerMessage}
+        />
+        <Dropdown
+          label={"Language"}
+          list={languages}
+          displayed={language}
+          setDisplayed={setLanguage}
         />
       </div>
       <div className="button-section">
@@ -135,6 +157,7 @@ function App() {
         <button onClick={compileCode}>Compile</button>
         <button onClick={runCode}>Run</button>
         <button onClick={submitCode}>Submit</button>
+        <button onClick={verifyCode}>Verify</button>
       </div>
       <div className="compile-message">
         <code>{serverMessage}</code>

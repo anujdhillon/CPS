@@ -1,3 +1,4 @@
+from tkinter import VERTICAL
 from flask import Flask, request, jsonify, send_from_directory
 from flask_sock import Sock
 from flask_cors import CORS
@@ -81,10 +82,9 @@ class Contest:
             count = 1
             url = f"https://atcoder.jp/contests/{self.contest_id}/tasks"
             self.driver.get(url)
-            print(self.driver.current_url)
             while True:
                 try:
-                    p_id = self.driver.find_element(
+                    self.driver.find_element(
                         By.XPATH, f"/html/body/div[3]/div/div[1]/div[2]/div/table/tbody/tr[{count}]/td[1]/a").text
                     count += 1
                 except Exception as e:
@@ -92,7 +92,6 @@ class Contest:
                     break
             for i in range(count-1):
                 self.problem_list.append(chr(ord('A') + i))
-        print(self.problem_list)
 
     def get_problem_details(self, problem_id):
         if problem_id in self.problem_details and len(self.problem_details[problem_id]["test_cases"]) > 1:
@@ -253,54 +252,12 @@ def check(s1, s2):
         return "WA"
 
 
-@app.route('/login/<platform>/<username>/<password>')
-def login(platform, username, password):
+def test(problem_id, language, test_case):
     global contest
-    contest = Contest(username, password, platform)
-    return jsonify({"status": "Logged in"})
-
-
-@app.route('/start/<contest_id>')
-def start(contest_id):
-    global contest
-    contest.start_contest(contest_id)
-    return jsonify({"problemList": contest.problem_list})
-
-
-@app.route('/change/<problem_id>')
-def change(problem_id):
-    global contest
-    print(f"Changing to problem {problem_id}.")
-    file_loc = os.path.join(contest.contest_dir, f"{problem_id}.cpp")
-    if not os.path.exists(file_loc):
-        print("File not found. Creating a new file.")
-        with open("boilerplate/template.cpp") as f:
-            template = f.read()
-        with open(file_loc, 'w') as f:
-            f.write(template)
-    os.system(f"code -g --goto {file_loc}:42:4")
-    return jsonify({"problemDetails": contest.get_problem_details(problem_id)})
-
-
-@app.route('/compile/<problem_id>')
-def compile(problem_id):
-    global contest
-    file_loc = os.path.join(contest.contest_dir, f"{problem_id}.cpp")
-    command = f"g++ -std=c++17 -g -Wall -Wextra -pedantic -O2 -Wshadow -Wformat=2 -Wfloat-equal -Wconversion -Wlogical-op -Wshift-overflow=2 -Wduplicated-cond -Wcast-qual -Wcast-align -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -D_FORTIFY_SOURCE=2 -fsanitize=address -fsanitize=undefined -fno-sanitize-recover -fstack-protector  {file_loc} -o {file_loc}.exe".split(
-    )
-    process = Popen(
-        command, stdout=PIPE, stderr=PIPE, encoding='UTF-8')
-    err = process.communicate()[1]
-    if not err:
-        err = "Compiled successfully."
-    return err
-
-
-@app.route('/run/<problem_id>', methods=["POST"])
-def run(problem_id):
-    global contest
-    test_case = request.json["testCase"]
-    file_loc = os.path.join(contest.contest_dir, f"{problem_id}.cpp.exe")
+    if language == 'cpp':
+        file_loc = os.path.join(contest.contest_dir, f"{problem_id}.cpp.exe")
+    else:
+        file_loc = os.path.join(contest.contest_dir, f"{problem_id}.py")
     if not os.path.exists(file_loc):
         verdict = "Executable not found. Try compiling again."
         out = ""
@@ -310,8 +267,11 @@ def run(problem_id):
         out = ""
         err = ""
     else:
-        command = f"{file_loc}"
-        process = Popen([command], stdout=PIPE, stdin=PIPE,
+        if language == 'cpp':
+            command = f"{file_loc}"
+        else:
+            command = f"python3 {file_loc}"
+        process = Popen(command.split(), stdout=PIPE, stdin=PIPE,
                         stderr=PIPE, encoding='UTF-8')
         process.stdin.write(test_case["input"])
         try:
@@ -326,6 +286,62 @@ def run(problem_id):
             out = ""
             err = ""
             verdict = "TLE"
+    return [verdict, out, err]
+
+
+@app.route('/login/<platform>', methods=["POST"])
+def login(platform):
+    global contest
+    username = request.json["username"]
+    password = request.json["password"]
+    contest = Contest(username, password, platform)
+    return jsonify({"status": "Logged in"})
+
+
+@app.route('/start/<contest_id>')
+def start(contest_id):
+    global contest
+    contest.start_contest(contest_id)
+    return jsonify({"problemList": contest.problem_list})
+
+
+@app.route('/change/<problem_id>/<language>')
+def change(problem_id, language):
+    global contest
+    print(f"Changing to problem {problem_id}.")
+    file_loc = os.path.join(contest.contest_dir, f"{problem_id}.{language}")
+    if not os.path.exists(file_loc):
+        print("File not found. Creating a new file.")
+        with open(f"boilerplate/template.{language}") as f:
+            template = f.read()
+        with open(file_loc, 'w') as f:
+            f.write(template)
+    os.system(f"code -g --goto {file_loc}:42:4")
+    return jsonify({"problemDetails": contest.get_problem_details(problem_id)})
+
+
+@app.route('/compile/<problem_id>/<language>')
+def compile(problem_id, language):
+    if language == 'py':
+        err = "No need to compile."
+    else:
+        global contest
+        file_loc = os.path.join(contest.contest_dir, f"{problem_id}.cpp")
+        command = f"g++ -std=c++17 -g -Wall -Wextra -pedantic -O2 -Wshadow -Wformat=2 -Wfloat-equal -Wconversion -Wlogical-op -Wshift-overflow=2 -Wduplicated-cond -Wcast-qual -Wcast-align -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -D_FORTIFY_SOURCE=2 -fsanitize=address -fsanitize=undefined -fno-sanitize-recover -fstack-protector  {file_loc} -o {file_loc}.exe".split(
+        )
+        process = Popen(
+            command, stdout=PIPE, stderr=PIPE, encoding='UTF-8')
+        err = process.communicate()[1]
+        if not err:
+            err = "Compiled successfully."
+    return err
+
+
+@app.route('/run/<problem_id>/<language>', methods=["POST"])
+def run(problem_id, language):
+    global contest
+    test_case = request.json["testCase"]
+    verdict, out, err = test(problem_id, language, test_case)
     return jsonify({"verdict": verdict, "result": out, "comments": err})
 
 
@@ -337,15 +353,42 @@ def submit(problem_id):
     return "Success"
 
 
-@app.route("/reset_code/<problem_id>")
-def reset_code(problem_id):
-    file_loc = os.path.join(contest.contest_dir, f"{problem_id}.cpp")
+@app.route('/verify/<problem_id>/<language>')
+def verify(problem_id, language):
+    global contest
+    failed_inputs = []
+    status = "OK"
+    for iteration in range(100):
+        test_case = {"input": "", "output": "",
+                     "result": "", "verdict": "", "comments": ""}
+        generator_command = f"python3 tester/generator.py"
+        process = Popen(generator_command.split(), stdout=PIPE, stdin=PIPE,
+                        stderr=PIPE, encoding='UTF-8')
+        test_case["input"] = process.communicate(timeout=5)[0]
+        true_output_command = f"python3 tester/true_output.py"
+        process = Popen(true_output_command.split(), stdout=PIPE, stdin=PIPE,
+                        stderr=PIPE, encoding='UTF-8')
+        process.stdin.write(test_case["input"])
+        test_case["output"] = process.communicate(timeout=5)[0]
+        verdict, out, err = test(problem_id, language, test_case)
+        if verdict == 'TLE' or verdict == 'WA':
+            test_case["result"] = out
+            test_case["verdict"] = verdict
+            test_case["comments"] = err
+            failed_inputs.append(test_case)
+            status = "Not OK"
+    return jsonify({"failedInputs": str(failed_inputs), "status": status})
+
+
+@app.route("/reset_code/<problem_id>/<language>")
+def reset_code(problem_id, language):
+    file_loc = os.path.join(contest.contest_dir, f"{problem_id}.{language}")
     print("Creating a new file.")
-    with open("boilerplate/template.cpp") as f:
+    with open(f"boilerplate/template.{language}") as f:
         template = f.read()
     with open(file_loc, 'w') as f:
         f.write(template)
-    return "Success"
+    return "Source code resetted."
 
 
 if (__name__ == "__main__"):
