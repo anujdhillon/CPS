@@ -1,11 +1,15 @@
-template <typename T, int n>
+int n;
+
+template <typename T>
 struct Matrix
 {
-    int a[n][n];
+    vector<vector<mint>> a;
     Matrix()
     {
+        a.resize(n);
         for (int i = 0; i < n; i++)
         {
+            a[i].resize(n);
             for (int j = 0; j < n; j++)
                 a[i][j] = 0;
         }
@@ -13,16 +17,20 @@ struct Matrix
 
     Matrix(vector<vector<T>> &aa)
     {
+        a.resize(n);
         for (int i = 0; i < n; i++)
         {
+            a[i].resize(n);
             for (int j = 0; j < n; j++)
                 a[i][j] = aa[i][j];
         }
     }
     Matrix(int k)
     {
+        a.resize(n);
         for (int i = 0; i < n; i++)
         {
+            a[i].resize(n);
             for (int j = 0; j < n; j++)
             {
                 if (i == j)

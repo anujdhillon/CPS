@@ -3,7 +3,7 @@ vector<pair<int, int>> run_length_encoding(T_iterable &iterable)
 {
     vector<pair<int, int>> res;
     int n = iterable.size();
-    rep(i, 0, n)
+    for (int i = 0; i < n; i++)
     {
         if (res.size() && iterable[res.back().first] == iterable[i])
             res.back().second++;

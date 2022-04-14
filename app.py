@@ -1,4 +1,3 @@
-from tkinter import VERTICAL
 from flask import Flask, request, jsonify, send_from_directory
 from flask_sock import Sock
 from flask_cors import CORS
@@ -20,7 +19,7 @@ app = Flask(__name__, static_url_path='', static_folder='build')
 CORS(app, supports_credentials=True)
 # log = logging.getLogger('werkzeug')
 # log.disabled = True
-socketio = SocketIO(app)
+# socketio = SocketIO(app)
 contest = None
 base_dir = os.path.join(os.path.dirname(
     os.path.realpath(__file__)), "files")
@@ -44,6 +43,7 @@ class Contest:
             self.driver.find_element(
                 By.ID, "password").send_keys(password)
             self.driver.find_element(By.CLASS_NAME, "submit").click()
+            print("Logged in.")
         elif platform == "practice":
             pass
         elif platform == "atcoder":
@@ -394,4 +394,4 @@ def reset_code(problem_id, language):
 if (__name__ == "__main__"):
     if not os.path.exists(base_dir):
         os.mkdir(base_dir)
-    socketio.run(app)
+    app.run()

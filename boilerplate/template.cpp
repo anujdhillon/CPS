@@ -37,13 +37,11 @@ int32_t main()
 {
     ios_base::sync_with_stdio(0);
     cin.tie(0);
-    clock_t clk = clock();
     int t = 1;
     cin >> t;
     for (int _ = 1; _ <= t; _++)
     {
         solve_case();
     }
-    cerr << fixed << setprecision(6) << "Time: " << ((double)(clock() - clk)) / CLOCKS_PER_SEC << "\n";
     return 0;
 }

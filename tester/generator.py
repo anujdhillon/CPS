@@ -1,7 +1,4 @@
-from random import randint
-
-n = randint(1,10)
-print(n)
-for i in range(n):
-    print(randint(1,10), end = " ")
-    
+from random import randint, random
+l = randint(1, 1000)
+r = randint(l+1, 1001)
+print(l, r)
