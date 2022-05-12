@@ -1,7 +1,7 @@
-vector<vector<int>> nexts(vector<int> &a, int mul)
-{ //use mul = 1 for next_mins, mult = -1 for next_maxs
+array<vector<int>, 2> nexts(vector<int> &a, int mul)
+{ // use mul = 1 for next_mins, mult = -1 for next_maxs
     int n = (int)a.size();
-    vector<vector<int>> res(2, vector<int>(n, n)); // 0 -> left, 1 -> right
+    array<vector<int>, 2> res{vector<int>(n, n), vector<int>(n, n)}; // 0 -> left, 1 -> right
     for (int i = 0; i < n; i++)
         res[0][i] = -1;
     vector<int> stack;

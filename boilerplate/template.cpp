@@ -3,6 +3,10 @@
 // #include <ext/pb_ds/tree_policy.hpp>
 
 // using namespace __gnu_pbds;
+
+// template <class T>
+// using ordered_set = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
+
 using namespace std;
 
 template <class X, class Y>
@@ -21,7 +25,6 @@ basic_ostream<Ch, Tr> &operator<<(basic_ostream<Ch, Tr> &os, Container const &x)
 
 #define int long long
 #define len(a) (int)a.size()
-#define ordered_set(T) tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>
 const long long INF = 1e18;
 const double EPS = 1e-9;
 const int di[8] = {1, 0, -1, 0, 1, -1, -1, 1};

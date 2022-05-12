@@ -143,17 +143,24 @@ class Contest:
         return self.problem_details
 
     def submit(self, problem_id, file_loc):
-        if self.platform == "codeforces":
-            self.driver.get(
-                f"https://codeforces.com/contest/{self.contest_id}/submit/{problem_id}")
-            self.driver.find_element(By.NAME, "sourceFile").send_keys(file_loc)
-            self.driver.find_element(By.CLASS_NAME, "submit").click()
-        elif self.platform == "practice":
-            pass
-        elif self.platform == "atcoder":
-            self.driver.get(
-                f"https://atcoder.jp/contests/{self.contest_id}/submit?taskScreenName={self.contest_id}_{problem_id}")
-            # to-do
+        try:
+            if self.platform == "codeforces":
+                self.driver.get(
+                    f"https://codeforces.com/contest/{self.contest_id}/submit/{problem_id}")
+                self.driver.find_element(
+                    By.NAME, "sourceFile").send_keys(file_loc)
+                self.driver.find_element(By.CLASS_NAME, "submit").click()
+            elif self.platform == "practice":
+                pass
+            elif self.platform == "atcoder":
+                self.driver.get(
+                    f"https://atcoder.jp/contests/{self.contest_id}/submit?taskScreenName={self.contest_id}_{problem_id}")
+                # to-do
+            print("Submitted")
+            return 1
+        except:
+            print("Error")
+            return 0
 
     def stats(self):
         res = {}
@@ -332,9 +339,10 @@ def compile(problem_id, language):
         process = Popen(
             command, stdout=PIPE, stderr=PIPE, encoding='UTF-8')
         err = process.communicate()[1]
+        status = 0
         if not err:
-            err = "Compiled successfully."
-    return err
+            status = 1
+    return jsonify({"message": err, "status": status})
 
 
 @app.route('/run/<problem_id>/<language>', methods=["POST"])
@@ -348,9 +356,8 @@ def run(problem_id, language):
 @app.route("/submit/<problem_id>")
 def submit(problem_id):
     file_loc = os.path.join(contest.contest_dir, f"{problem_id}.cpp")
-    contest.submit(problem_id, file_loc)
-    print("Code submitted. Fingers crossed.")
-    return "Success"
+    done = contest.submit(problem_id, file_loc)
+    return jsonify({"status": done})
 
 
 @app.route('/verify/<problem_id>/<language>')
@@ -358,18 +365,18 @@ def verify(problem_id, language):
     global contest
     failed_inputs = []
     status = "OK"
-    for iteration in range(100):
+    for iteration in range(10):
         test_case = {"input": "", "output": "",
                      "result": "", "verdict": "", "comments": ""}
         generator_command = f"python3 tester/generator.py"
         process = Popen(generator_command.split(), stdout=PIPE, stdin=PIPE,
                         stderr=PIPE, encoding='UTF-8')
-        test_case["input"] = process.communicate(timeout=5)[0]
+        test_case["input"] = process.communicate(timeout=10)[0]
         true_output_command = f"python3 tester/true_output.py"
         process = Popen(true_output_command.split(), stdout=PIPE, stdin=PIPE,
                         stderr=PIPE, encoding='UTF-8')
         process.stdin.write(test_case["input"])
-        test_case["output"] = process.communicate(timeout=5)[0]
+        test_case["output"] = process.communicate(timeout=10)[0]
         verdict, out, err = test(problem_id, language, test_case)
         if verdict == 'TLE' or verdict == 'WA':
             test_case["result"] = out
