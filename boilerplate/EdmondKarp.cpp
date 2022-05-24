@@ -38,6 +38,8 @@ int maxflow(int s, int t)
     while (true)
     {
         int new_flow = bfs(s, t, parent);
+        if (!new_flow)
+            break;
         flow += new_flow;
         int cur = t;
         while (cur != s)
