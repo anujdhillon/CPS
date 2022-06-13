@@ -2,7 +2,7 @@ Supported for linux. <br/>
 Install firefox. <br/>
 `sudo apt install firefox` <br/>
 -Install geckodriver <br/>
-`wget https://github.com/mozilla/geckodriver/releases/download/v0.30.0/geckodriver-v0.30.0-linux32.tar.gz` <br/>
+`wget https://github.com/mozilla/geckodriver/releases/download/v0.31.0/geckodriver-v0.31.0-linux32.tar.gz` <br/>
 `tar -xvzf geckodriver*` <br/>
 `chmod +x geckodriver` <br/>
 `sudo mv geckodriver /usr/local/bin/` <br/>
